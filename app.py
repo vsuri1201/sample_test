@@ -29,6 +29,7 @@ def apply():
     message = request.form.get('message')
     us_citizen = request.form.get('usCitizen')
     visa_sponsorship = request.form.get('visaSponsorship')
+    hr_email = os.getenv('HR_EMAIL')
 
     # Optional: Check if there's an attachment in the request
     attachment = request.files.get('attachments')
@@ -56,7 +57,7 @@ def apply():
     # Create the notification email to HR with all form details
     hr_msg = Message(
         subject="New Job Application: " + subject,
-        recipients=[],  # Replace with your HR email
+        recipients=[hr_email],  # Replace with your HR email
         body=f"New job application from {first_name} {last_name} ({email}).\n\n"
              f"Primary Skills: {primary_skills}\n"
              f"Current Designation: {current_designation}\n"
