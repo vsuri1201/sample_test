@@ -78,5 +78,34 @@ def apply():
 
     return jsonify({'message': 'Application submitted successfully'}), 200
 
+@app.route('/send-message', methods=['POST'])
+def send_user_message():
+    #Retrieve form data
+    name = request.form.get('name')
+    email = request.form.get('email')
+    subject = request.form.get('subject')
+    message = request.form.get('message')
+
+    hr_msg = Message(
+        subject = subject,
+        recepients = [os.getenv('HR_EMAIL')],
+        message = f"Message from {name} ({email})\n\n{message}"
+    )
+    try:
+        mail.send(hr_msg)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    acknowledgment_msg = Message(
+        subject="DO NOT REPLY "+subject,
+        recipients=[email],
+        body=f"Hello  {name},\n\n. We have received your inquiry.\n\n"
+             "Our team will get back to you soon.\n\nBest regards,\nYour Company"
+    )
+    try:
+        mail.send(acknowledgment_msg)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)
