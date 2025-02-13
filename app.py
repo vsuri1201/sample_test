@@ -109,7 +109,7 @@ def send_user_message():
         mail.send(acknowledgment_msg)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    return None, 200
+    return jsonify({'message': 'Inquiry submitted successfully'}), 200
 
 
 if __name__ == '__main__':
