@@ -1,10 +1,12 @@
 import os
 from flask import Flask, request, jsonify
 from flask_mail import Mail, Message
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from io import BytesIO
 
 app = Flask(__name__)
+CORS(app)
 
 # Flask-Mail configuration from environment variables
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
