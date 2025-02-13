@@ -90,7 +90,7 @@ def send_user_message():
 
     hr_msg = Message(
         subject = subject,
-        recepients = [os.getenv('HR_EMAIL')],
+        recipients = [os.getenv('HR_EMAIL')],
         message = f"Message from {name} ({email})\n\n{message}"
     )
     try:
