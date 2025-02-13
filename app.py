@@ -22,15 +22,16 @@ mail = Mail(app)
 @app.route('/apply', methods=['POST'])
 def apply():
     # Retrieve form data
-    first_name = request.form.get('firstName')
-    last_name = request.form.get('lastName')
-    email = request.form.get('email')
-    primary_skills = request.form.get('primarySkills')
-    current_designation = request.form.get('currentDesignation')
-    subject = request.form.get('subject')
-    message = request.form.get('message')
-    us_citizen = request.form.get('usCitizen')
-    visa_sponsorship = request.form.get('visaSponsorship')
+    request_data = request.get_json()
+    first_name = request_data.get('firstName')
+    last_name = request_data.get('lastName')
+    email = request_data.get('email')
+    primary_skills = request_data.get('primarySkills')
+    current_designation = request_data.get('currentDesignation')
+    subject = request_data.get('subject')
+    message = request_data.get('message')
+    us_citizen = request_data.get('usCitizen')
+    visa_sponsorship = request_data.get('visaSponsorship')
     hr_email = os.getenv('HR_EMAIL')
 
     # Optional: Check if there's an attachment in the request
@@ -83,10 +84,11 @@ def apply():
 @app.route('/send-message', methods=['POST'])
 def send_user_message():
     #Retrieve form data
-    name = request.form.get('name')
-    email = request.form.get('email')
-    subject = request.form.get('subject')
-    message = request.form.get('message')
+    request_data = request.get_json()
+    name = request_data.get('name')
+    email = request_data.get('email')
+    subject = request_data.get('subject')
+    message = request_data.get('message')
 
     hr_msg = Message(
         subject = subject,
