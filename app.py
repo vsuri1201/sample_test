@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_mail import Mail, Message
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -42,7 +42,9 @@ def apply():
     if attachment:
         filename = secure_filename(attachment.filename)
         attachment_io = BytesIO(attachment.read())  # Read file into memory
-    
+
+    print(firstName, lastName, email, mobile, primarySkills, currentDesignation, message, usCitizen, visaSponsorship, jobDetail, attachment, filename)
+
     return send_application_emails(
         firstName=firstName,
         lastName=lastName,
@@ -113,6 +115,8 @@ def send_user_message():
     email = request.form.get('email')
     subject = request.form.get('subject')
     message = request.form.get('message')
+
+    print(name, email, subject, message)
 
     return send_inquiry_emails(
         name=name,
