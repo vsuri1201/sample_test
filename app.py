@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, session, redirect, url_for
+from flask import Flask, request, jsonify, render_template
 from flask_mail import Mail, Message
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -43,19 +43,18 @@ def apply():
         filename = secure_filename(attachment.filename)
         attachment_io = BytesIO(attachment.read())  # Read file into memory
 
+    email_body = render_template(
+        'job_app_ack_to_user_template.html',
+        firstName=firstName,
+        lastName=lastName,
+        jobDetail=jobDetail,
+        companyName=os.getenv('COMPANY_NAME')
+    )
 
-    print('Before User Acknowledgement Email')
-    print('FirstName: ',firstName)
-    print('LastName: ', lastName)
-    print('Email: ', email)
     acknowledgment_msg = Message(
         subject="Application Received: " + jobDetail,
         recipients=[email],
-        body = (
-        f"Hello {firstName} {lastName},\n\n"
-        f"Thank you for applying. We have received your application.\n\n"
-        "Our team will get back to you soon.\n\nBest regards,\n" + os.getenv('COMPANY_NAME')
-        )
+        html=email_body
     )
 
     try:
@@ -64,25 +63,24 @@ def apply():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    print('After User Email and Before HR Email')
-    print('FirstName: ',firstName)
-    print('LastName: ', lastName)
-    print('Email: ', email)
+    email_body = render_template(
+        'job_app_to_hr_template.html',
+        firstName=firstName,
+        lastName=lastName,
+        email=email,
+        mobile=mobile,
+        primarySkills=primarySkills,
+        currentDesignation=currentDesignation,
+        usCitizen=usCitizen,
+        visaSponsorship=visaSponsorship,
+        message=message
+    )
 
     # Create the notification email to HR with all form details
     hr_msg = Message(
         subject="New Job Application: " + jobDetail,
         recipients=[os.getenv('HR_EMAIL')],  # Replace with your HR email
-        body = (
-            f"New job application from {firstName} {lastName}.\n\n"
-            f"Contact Details: {email}, {mobile}\n"
-            f"Primary Skills: {primarySkills}\n"
-            f"Current Designation: {currentDesignation}\n"
-            f"US Citizen: {usCitizen}\n"
-            f"Visa Sponsorship Required: {visaSponsorship}\n\n"
-            f"Message: {message}\n\n"
-            "Resume attached." if attachment else "No resume attached."
-        )
+        html=email_body
     )
 
     # If there is an attachment, attach it to the HR email
@@ -106,18 +104,19 @@ def send_user_message():
     subject = request.form.get('subject')
     message = request.form.get('message')
     
-    print('Before HR Inquiry Email')
-    print('Name: ', name)
-    print('Email: ', email)
-    print('Message: ', message)
+    email_body = render_template(
+        'inquiry_to_hr_template.html',
+        name=name,
+        email=email,
+        message=message,
+        companyName=os.getenv('COMPANY_NAME')
+    )
 
     # Create the notification email to HR with inquiry details
     hr_msg = Message(
         subject = subject,
         recipients = [os.getenv('HR_EMAIL')],
-        body = (
-            f"Message from {name} ({email})\n\n{message}"
-        )
+        html=email_body
     )
     try:
         mail.send(hr_msg)
@@ -126,20 +125,17 @@ def send_user_message():
         return jsonify({'error': str(e)}), 500
     
 
-    print('After HR Inquiry Email and Before User Ack Mail')
-    print('Name: ', name)
-    print('Email: ', email)
-    print('Message: ', message)
+    email_body = render_template(
+        'inquiry_ack_to_user_template.html',
+        name=name,
+        companyName=os.getenv('COMPANY_NAME')
+    )
 
     # Create acknowledgment email to the user regarding the inquiry
     acknowledgment_msg = Message(
         subject="DO NOT REPLY "+subject,
         recipients=[email],
-        body = (
-        f"Hello {name},\n\n"
-        f"Thanks for writing to us. We have received your inquiry.\n\n"
-        "Our team will get back to you soon.\n\nBest regards,\n" + os.getenv('COMPANY_NAME')
-        )
+        html=email_body
     )
     try:
         mail.send(acknowledgment_msg)
