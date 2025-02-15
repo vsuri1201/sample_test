@@ -43,32 +43,30 @@ def apply():
         filename = secure_filename(attachment.filename)
         attachment_io = BytesIO(attachment.read())  # Read file into memory
 
-    print(firstName, lastName, email, mobile, primarySkills, currentDesignation, message, usCitizen, visaSponsorship, jobDetail, attachment, filename)
+    session['application_firstName']=firstName
+    session['application_lastName']=lastName
+    session['application_email']=email
+    session['application_mobile']=mobile
+    session['application_primarySkills']=primarySkills
+    session['application_currentDesignation']=currentDesignation
+    session['application_message']=message
+    session['application_usCitizen']=usCitizen
+    session['application_visaSponsorship']=visaSponsorship
+    session['application_jobDetail']=jobDetail
+    session['application_attachment']=attachment
+    session['application_filename']=filename
+    session['application_attachment_io']=attachment_io
 
-    return send_application_emails(
-        firstName=firstName,
-        lastName=lastName,
-        email=email,
-        mobile=mobile,
-        primarySkills=primarySkills,
-        currentDesignation=currentDesignation,
-        message=message,
-        usCitizen=usCitizen,
-        visaSponsorship=visaSponsorship,
-        jobDetail=jobDetail,
-        attachment=attachment,
-        filename=filename,
-        attachment_io=attachment_io
-    )
+    return send_application_emails()
 
 
-def send_application_emails(firstName, lastName, email, mobile, primarySkills, currentDesignation, message, usCitizen, visaSponsorship, jobDetail, attachment, filename, attachment_io):
+def send_application_emails():
     # Create acknowledgment email to the user
     acknowledgment_msg = Message(
-        subject="Application Received: " + jobDetail,
-        recipients=[email],
+        subject="Application Received: " + session.get('application_jobDetail'),
+        recipients=[session.get('application_email')],
         body = (
-        f"Hello {firstName} {lastName},\n\n"
+        f"Hello {session.get('application_firstName')} {session.get('application_lastName')},\n\n"
         f"Thank you for applying. We have received your application.\n\n"
         "Our team will get back to you soon.\n\nBest regards,\n" + os.getenv('COMPANY_NAME')
         )
@@ -82,23 +80,23 @@ def send_application_emails(firstName, lastName, email, mobile, primarySkills, c
 
     # Create the notification email to HR with all form details
     hr_msg = Message(
-        subject="New Job Application: " + jobDetail,
+        subject="New Job Application: " + session.get('application_jobDetail'),
         recipients=[os.getenv('HR_EMAIL')],  # Replace with your HR email
         body = (
-            f"New job application from {firstName} {lastName}.\n\n"
-            f"Contact Details: {email}, {mobile}\n"
-            f"Primary Skills: {primarySkills}\n"
-            f"Current Designation: {currentDesignation}\n"
-            f"US Citizen: {usCitizen}\n"
-            f"Visa Sponsorship Required: {visaSponsorship}\n\n"
-            f"Message: {message}\n\n"
-            "Resume attached." if attachment else "No resume attached."
+            f"New job application from {session.get('application_firstName')} {session.get('application_lastName')}.\n\n"
+            f"Contact Details: {session.get('application_email')}, {session.get('application_mobile')}\n"
+            f"Primary Skills: {session.get('application_primarySkills')}\n"
+            f"Current Designation: {session.get('application_currentDesignation')}\n"
+            f"US Citizen: {session.get('application_usCitizen')}\n"
+            f"Visa Sponsorship Required: {session.get('application_visaSponsorship')}\n\n"
+            f"Message: {session.get('application_message')}\n\n"
+            "Resume attached." if session.get('application_attachment') else "No resume attached."
         )
     )
 
     # If there is an attachment, attach it to the HR email
-    if attachment_io:
-        hr_msg.attach(filename, attachment.content_type, attachment_io.read())
+    if session.get('application_attachment_io'):
+        hr_msg.attach(session.get('application_filename'), session.get('application_attachment').content_type, session.get('application_attachment_io').read())
 
     try:
         mail.send(hr_msg)
@@ -116,23 +114,20 @@ def send_user_message():
     subject = request.form.get('subject')
     message = request.form.get('message')
 
-    print(name, email, subject, message)
+    session['inquiry_name'] = name
+    session['inquiry_email'] = email
+    session['inquiry_subject'] = subject
+    session['inquiry_message'] = message
 
-    return send_inquiry_emails(
-        name=name,
-        email=email,
-        subject=subject,
-        message=message
-    )
-    
+    return send_inquiry_emails()    
 
-def send_inquiry_emails(name, email, subject, message):
+def send_inquiry_emails():
     # Create the notification email to HR with inquiry details
     hr_msg = Message(
-        subject = subject,
+        subject = session.get('inquiry_subject'),
         recipients = [os.getenv('HR_EMAIL')],
         body = (
-            f"Message from {name} ({email})\n\n{message}"
+            f"Message from {session.get('inquiry_name')} ({session.get('inquiry_email')})\n\n{session.get('inquiry_message')}"
         )
     )
     try:
@@ -143,10 +138,10 @@ def send_inquiry_emails(name, email, subject, message):
     
     # Create acknowledgment email to the user regarding the inquiry
     acknowledgment_msg = Message(
-        subject="DO NOT REPLY "+subject,
-        recipients=[email],
+        subject="DO NOT REPLY "+session.get('inquiry_subject'),
+        recipients=[session.get('inquiry_email')],
         body = (
-        f"Hello {name},\n\n"
+        f"Hello {session.get('inquiry_name')},\n\n"
         f"Thanks for writing to us. We have received your inquiry.\n\n"
         "Our team will get back to you soon.\n\nBest regards,\n" + os.getenv('COMPANY_NAME')
         )
