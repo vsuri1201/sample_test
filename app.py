@@ -8,6 +8,7 @@ from io import BytesIO
 app = Flask(__name__)
 CORS(app)
 
+app.secret_key = os.urandom(24)
 # Flask-Mail configuration from environment variables
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
@@ -22,17 +23,16 @@ mail = Mail(app)
 @app.route('/apply', methods=['POST'])
 def apply():
     # Retrieve form data
-    first_name = request.form.get('firstName')
-    last_name = request.form.get('lastName')
+    firstName = request.form.get('firstName')
+    lastName = request.form.get('lastName')
     email = request.form.get('email')
     mobile = request.form.get('mobile')
-    primary_skills = request.form.get('primarySkills')
-    current_designation = request.form.get('currentDesignation')
+    primarySkills = request.form.get('primarySkills')
+    currentDesignation = request.form.get('currentDesignation')
     message = request.form.get('message')
-    us_citizen = request.form.get('usCitizen')
-    visa_sponsorship = request.form.get('visaSponsorship')
-    job_detail = request.form.get('jobDetail')
-    hr_email = os.getenv('HR_EMAIL')
+    usCitizen = request.form.get('usCitizen')
+    visaSponsorship = request.form.get('visaSponsorship')
+    jobDetail = request.form.get('jobDetail')
     # Optional: Check if there's an attachment in the request
     attachment = request.files.get('attachment')
     filename = None
@@ -42,13 +42,31 @@ def apply():
     if attachment:
         filename = secure_filename(attachment.filename)
         attachment_io = BytesIO(attachment.read())  # Read file into memory
+    
+    return send_application_emails(
+        firstName=firstName,
+        lastName=lastName,
+        email=email,
+        mobile=mobile,
+        primarySkills=primarySkills,
+        currentDesignation=currentDesignation,
+        message=message,
+        usCitizen=usCitizen,
+        visaSponsorship=visaSponsorship,
+        jobDetail=jobDetail,
+        attachment=attachment,
+        filename=filename,
+        attachment_io=attachment_io
+    )
 
+
+def send_application_emails(firstName, lastName, email, mobile, primarySkills, currentDesignation, message, usCitizen, visaSponsorship, jobDetail, attachment, filename, attachment_io):
     # Create acknowledgment email to the user
     acknowledgment_msg = Message(
-        subject="Application Received: " + job_detail,
+        subject="Application Received: " + jobDetail,
         recipients=[email],
         body = (
-        f"Hello {first_name} {last_name},\n\n"
+        f"Hello {firstName} {lastName},\n\n"
         f"Thank you for applying. We have received your application.\n\n"
         "Our team will get back to you soon.\n\nBest regards,\n" + os.getenv('COMPANY_NAME')
         )
@@ -62,15 +80,15 @@ def apply():
 
     # Create the notification email to HR with all form details
     hr_msg = Message(
-        subject="New Job Application: " + job_detail,
-        recipients=[hr_email],  # Replace with your HR email
+        subject="New Job Application: " + jobDetail,
+        recipients=[os.getenv('HR_EMAIL')],  # Replace with your HR email
         body = (
-            f"New job application from {first_name} {last_name}.\n\n"
+            f"New job application from {firstName} {lastName}.\n\n"
             f"Contact Details: {email}, {mobile}\n"
-            f"Primary Skills: {primary_skills}\n"
-            f"Current Designation: {current_designation}\n"
-            f"US Citizen: {us_citizen}\n"
-            f"Visa Sponsorship Required: {visa_sponsorship}\n\n"
+            f"Primary Skills: {primarySkills}\n"
+            f"Current Designation: {currentDesignation}\n"
+            f"US Citizen: {usCitizen}\n"
+            f"Visa Sponsorship Required: {visaSponsorship}\n\n"
             f"Message: {message}\n\n"
             "Resume attached." if attachment else "No resume attached."
         )
@@ -96,6 +114,16 @@ def send_user_message():
     subject = request.form.get('subject')
     message = request.form.get('message')
 
+    return send_inquiry_emails(
+        name=name,
+        email=email,
+        subject=subject,
+        message=message
+    )
+    
+
+def send_inquiry_emails(name, email, subject, message):
+    # Create the notification email to HR with inquiry details
     hr_msg = Message(
         subject = subject,
         recipients = [os.getenv('HR_EMAIL')],
@@ -108,6 +136,8 @@ def send_user_message():
         print('Inquiry email sent to HR')
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    # Create acknowledgment email to the user regarding the inquiry
     acknowledgment_msg = Message(
         subject="DO NOT REPLY "+subject,
         recipients=[email],
